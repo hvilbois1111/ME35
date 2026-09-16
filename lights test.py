@@ -4,43 +4,16 @@ import time
 
 np = neopixel.NeoPixel(Pin(15),2) # 0 is the Pin for neopixel and 4 is the number of lights
 
+btn = Pin(34, Pin.IN, Pin.PULL_UP) 
+DEBOUNCE_MS = 20
 
-def demo(np):
-    n = np.n
-
-    # cycle
-    for i in range(4 * n):
-        for j in range(n):
-            np[j] = (0, 0, 0)
-        np[i % n] = (255, 255, 255)
-        np.write()
-        time.sleep_ms(1000)
-
-    # bounce
-    for i in range(4 * n):
-        for j in range(n):
-            np[j] = (0, 0, 128)
-        if (i // n) % 2 == 0:
-            np[i % n] = (0, 0, 0)
-        else:
-            np[n - 1 - (i % n)] = (0, 0, 0)
-        np.write()
-        time.sleep_ms(60)
-
-    # fade in/out
-    for i in range(0, 4 * 256, 8):
-        for j in range(n):
-            if (i // 256) % 2 == 0:
-                val = i & 0xff
-            else:
-                val = 255 - (i & 0xff)
-            np[j] = (val, 0, 0)
-        np.write()
-
-    # clear
-    for i in range(n):
-        np[i] = (0, 0, 0)
-    np.write()
     
-    
-    
+while True:
+    if btn.value() == 0:
+        time.sleep_ms(DEBOUNCE_MS)
+        if btn.value() == 0:
+            print("button.pressed")
+            np[0] = (0,0,0)
+            np.write()
+            while btn.value() == 0:
+                pass
