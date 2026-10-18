@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 990" width="1000" height="990" font-family="Segoe UI, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#475569"/>
+    </marker>
+    <style>
+      .panel { fill: #F8FAFC; stroke: #CBD5E1; stroke-width: 1.5; }
+      .box { fill: #FFFFFF; stroke: #94A3B8; stroke-width: 1.5; }
+      .knn { fill: #EDE9FE; stroke: #7C3AED; stroke-width: 1.5; }
+      .blue { fill: #DBEAFE; stroke: #2563EB; stroke-width: 1.5; }
+      .red { fill: #FEE2E2; stroke: #DC2626; stroke-width: 1.5; }
+      .misc { fill: #F1F5F9; stroke: #64748B; stroke-width: 1.5; }
+      .line { fill: none; stroke: #475569; stroke-width: 1.6; }
+      .t { font-size: 14px; font-weight: 600; fill: #0F172A; text-anchor: middle; }
+      .s { font-size: 11.5px; fill: #475569; text-anchor: middle; }
+      .code { font-family: Consolas, Menlo, monospace; font-size: 11px; fill: #475569; text-anchor: middle; }
+      .h { font-size: 15px; font-weight: 700; fill: #0F172A; }
+      .hs { font-size: 12px; fill: #64748B; }
+      .lbl { font-size: 11.5px; fill: #334155; font-weight: 600; }
+    </style>
+  </defs>
+
+  <rect width="1000" height="990" fill="#FFFFFF"/>
+
+  <!-- ===== Title ===== -->
+  <text x="500" y="40" class="t" style="font-size:22px">LEGO Color Sorter: Program Flow</text>
+  <text x="500" y="64" class="s" style="font-size:13px">ESP32 · MicroPython · VEML6040 color sensor · KNN classifier (k = 3)</text>
+
+  <!-- ===== Setup ===== -->
+  <rect x="300" y="88" width="400" height="62" rx="10" class="box"/>
+  <text x="500" y="112" class="t">Setup</text>
+  <text x="500" y="132" class="s">Settings &amp; pins · sensor on I2C · LEDs off · servos to home</text>
+
+  <!-- ===== Training panel ===== -->
+  <rect x="40" y="190" width="420" height="545" rx="14" class="panel"/>
+  <text x="60" y="216" class="h">1 · TRAINING MODE</text>
+  <text x="442" y="216" class="hs" text-anchor="end">15 button presses</text>
+  <path d="M500,150 V170 H250 V238" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="90" y="240" width="320" height="50" rx="8" class="box"/>
+  <text x="250" y="261" class="t">Wait for button press</text>
+  <text x="250" y="279" class="code">wait_for_button()</text>
+  <path d="M250,290 V318" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="90" y="320" width="320" height="60" rx="8" class="box"/>
+  <text x="250" y="343" class="t">Scan brick</text>
+  <text x="250" y="363" class="s">White LED on → read R, G, B, W → LED off</text>
+  <path d="M250,380 V408" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="90" y="410" width="320" height="60" rx="8" class="box"/>
+  <text x="250" y="433" class="t">Normalize color</text>
+  <text x="250" y="453" class="code">r = R/W   g = G/W   b = B/W</text>
+  <path d="M250,470 V498" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="90" y="500" width="320" height="60" rx="8" class="box"/>
+  <text x="250" y="523" class="t">Save labeled training point</text>
+  <text x="250" y="543" class="code">data.append((r, g, b, label))</text>
+
+  <!-- training loop back -->
+  <path d="M90,530 H65 V265 H88" class="line" marker-end="url(#arrow)"/>
+  <text x="58" y="400" class="lbl" text-anchor="middle" transform="rotate(-90 58 400)">next brick</text>
+
+  <!-- label chips -->
+  <rect x="90" y="590" width="320" height="125" rx="8" class="box"/>
+  <text x="250" y="613" class="t">Which label is saved?</text>
+  <rect x="115" y="628" width="16" height="16" rx="3" class="blue"/>
+  <text x="142" y="641" class="s" style="text-anchor:start">Presses 1–5   →   "blue"</text>
+  <rect x="115" y="654" width="16" height="16" rx="3" class="red"/>
+  <text x="142" y="667" class="s" style="text-anchor:start">Presses 6–10   →   "red"</text>
+  <rect x="115" y="680" width="16" height="16" rx="3" class="misc"/>
+  <text x="142" y="693" class="s" style="text-anchor:start">Presses 11–15   →   "X" (any other color)</text>
+
+
+  <!-- ===== Sorting panel ===== -->
+  <rect x="520" y="190" width="440" height="740" rx="14" class="panel"/>
+  <text x="540" y="216" class="h">2 · SORTING MODE</text>
+  <text x="942" y="216" class="hs" text-anchor="end">repeats forever</text>
+
+  <!-- training done -> sorting -->
+  <path d="M460,265 H568" class="line" marker-end="url(#arrow)"/>
+  <text x="490" y="242" class="lbl" text-anchor="middle">training</text>
+  <text x="490" y="256" class="lbl" text-anchor="middle">done</text>
+
+  <rect x="570" y="240" width="340" height="50" rx="8" class="box"/>
+  <text x="740" y="261" class="t">Wait for button press</text>
+  <text x="740" y="279" class="code">wait_for_button()</text>
+  <path d="M740,290 V313" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="570" y="315" width="340" height="60" rx="8" class="box"/>
+  <text x="740" y="338" class="t">Scan &amp; normalize</text>
+  <text x="740" y="358" class="s">White LED on → read sensor → r, g, b</text>
+  <path d="M740,375 V398" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="570" y="400" width="340" height="72" rx="8" class="knn"/>
+  <text x="740" y="423" class="t">KNN guess (k = 3)</text>
+  <text x="740" y="442" class="s">Distance from new brick to all 15 training points</text>
+  <text x="740" y="459" class="s">3 nearest neighbors vote → most votes wins</text>
+  <path d="M740,472 V493" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="570" y="495" width="340" height="44" rx="8" class="box"/>
+  <text x="740" y="522" class="t">Print guess · white LED off</text>
+  <path d="M740,539 V568" class="line" marker-end="url(#arrow)"/>
+
+  <!-- decision -->
+  <polygon points="740,570 805,610 740,650 675,610" class="box"/>
+  <text x="740" y="614" class="t" style="font-size:13px">Color?</text>
+
+  <path d="M675,610 H605 V688" class="line" marker-end="url(#arrow)"/>
+  <text x="640" y="602" class="lbl" text-anchor="middle" fill="#2563EB">blue</text>
+  <path d="M740,650 V688" class="line" marker-end="url(#arrow)"/>
+  <text x="750" y="673" class="lbl" text-anchor="start">X</text>
+  <path d="M805,610 H875 V688" class="line" marker-end="url(#arrow)"/>
+  <text x="840" y="602" class="lbl" text-anchor="middle" fill="#DC2626">red</text>
+
+  <rect x="548" y="690" width="115" height="70" rx="8" class="blue"/>
+  <text x="605" y="716" class="t" style="font-size:13px">Flash blue ×3</text>
+  <text x="605" y="738" class="s">Head → 30°</text>
+
+  <rect x="683" y="690" width="114" height="70" rx="8" class="misc"/>
+  <text x="740" y="716" class="t" style="font-size:13px">No flash</text>
+  <text x="740" y="738" class="s">Head stays 90°</text>
+
+  <rect x="817" y="690" width="115" height="70" rx="8" class="red"/>
+  <text x="875" y="716" class="t" style="font-size:13px">Flash red ×3</text>
+  <text x="875" y="738" class="s">Head → 160°</text>
+
+  <!-- merge -->
+  <path d="M605,760 V780 H740" class="line"/>
+  <path d="M875,760 V780 H740" class="line"/>
+  <path d="M740,760 V798" class="line" marker-end="url(#arrow)"/>
+
+  <rect x="570" y="800" width="340" height="90" rx="8" class="box"/>
+  <text x="740" y="823" class="t">Drop brick</text>
+  <text x="740" y="844" class="s">Hatch opens 90° · hold 1 s</text>
+  <text x="740" y="862" class="s">Hatch closes + head returns to center together</text>
+  <text x="740" y="880" class="code">drop_brick(head_angle)</text>
+
+  <!-- sorting loop back (joins the line into "Wait for button press") -->
+  <path d="M570,845 H535 V265" class="line"/>
+  <text x="528" y="560" class="lbl" text-anchor="middle" transform="rotate(-90 528 560)">next brick</text>
+
+  <!-- ===== Footer: hardware ===== -->
+  <text x="500" y="965" class="s" style="font-size:12px">Hardware: button (GPIO 19) · white / blue / red LEDs via MOSFETs (GPIO 16 / 17 / 18) · hatch servo (GPIO 4) · head servo (GPIO 5)</text>
+</svg>
