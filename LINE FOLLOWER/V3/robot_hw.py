@@ -1,6 +1,7 @@
 # robot_hw.py
 # Hardware layer for the Cytron Robo ESP32 line follower:
-# motors, two VEML6040 color sensors, NeoPixels, buzzer, buttons.
+# motors, three VEML6040 color sensors (left + right for steering, a middle
+# one for color only), white illumination LED, NeoPixels, buzzer, buttons.
 # Pin numbers come from the Robo ESP32 datasheet.
 
 from machine import Pin, PWM, SoftI2C
@@ -13,14 +14,18 @@ from veml6040 import VEML6040, ADDR
 # ------------------------------------------------------------------
 LEFT_MOTOR_PINS = (12, 13)     # motor terminal M1 (M1A=D12, M1B=D13)
 RIGHT_MOTOR_PINS = (14, 27)    # motor terminal M2 (M2A=D14, M2B=D27)
-LEFT_MOTOR_REVERSED = False    # flip if that wheel spins backward
+LEFT_MOTOR_REVERSED = True    # flip if that wheel spins backward
 RIGHT_MOTOR_REVERSED = False
 
-LEFT_SENSOR_PORT = (21, 22)    # Grove port 2 (the board's I2C port)
-RIGHT_SENSOR_PORT = (17, 16)   # Grove port 1 (used as a 2nd, software I2C bus)
-# If you'd rather use another port for a sensor: Grove 3 = (26, 25),
-# Grove 5 = (33, 32). Don't use ports 6/7 (GPIO 36/39 are input-only).
+# Each VEML6040 has the same fixed I2C address, so each needs its own port.
+LEFT_SENSOR_PORT = (17, 16)    # Grove port 1 - LEFT steering sensor (straddles left tape edge)
+RIGHT_SENSOR_PORT = (21, 22)   # Grove port 2 - RIGHT steering sensor (straddles right tape edge)
+COLOR_SENSOR_PORT = (33, 32)   # Grove port 5 - MIDDLE color sensor (over the tape center)
+# Grove ports 3/4 use GPIO 25 (the white LED) - don't use them for sensors.
+# Ports 6/7 (GPIO 36/39) are input-only and can't do I2C.
 
+ILLUM_LED_PIN = 25             # white LED that lights the floor under the sensors
+                               # (always on while any script uses Robot(); set None if unused)
 NEOPIXEL_PIN = 15
 NUM_PIXELS = 2
 BUZZER_PIN = 23                # buzzer mute switch must be OFF to hear it
@@ -80,6 +85,14 @@ class Robot:
         self.left_motor = Motor(LEFT_MOTOR_PINS, LEFT_MOTOR_REVERSED)
         self.right_motor = Motor(RIGHT_MOTOR_PINS, RIGHT_MOTOR_REVERSED)
 
+        # Illumination LED on FIRST, so calibrate / monitor / main all see the
+        # same lighting.
+        self.illum = None
+        if ILLUM_LED_PIN is not None:
+            self.illum = Pin(ILLUM_LED_PIN, Pin.OUT)
+            self.illum.value(1)
+            time.sleep_ms(20)
+
         self.np = NeoPixel(Pin(NEOPIXEL_PIN, Pin.OUT), NUM_PIXELS)
         # Buzzer starts at a different freq than the motors so it gets
         # its own PWM timer (changing a shared timer would change motor PWM).
@@ -90,9 +103,10 @@ class Robot:
         self.btn_b = Pin(BUTTON_B_PIN, Pin.IN)
 
         self.sample_ms = SENSOR_IT_MS
-        self.sensor_l = self.sensor_r = None
+        self.sensor_l = self.sensor_r = self.sensor_c = None
         self.sensor_info = {}
-        for side, pins in (("left", LEFT_SENSOR_PORT), ("right", RIGHT_SENSOR_PORT)):
+        for side, pins in (("left", LEFT_SENSOR_PORT), ("right", RIGHT_SENSOR_PORT),
+                           ("color", COLOR_SENSOR_PORT)):
             bus, sda, scl = _find_sensor_bus(pins)
             if bus is None:
                 self.sensor_info[side] = "NOT FOUND on pins %s" % (pins,)
@@ -104,8 +118,10 @@ class Robot:
             self.sensor_info[side] = "found (SDA=%d, SCL=%d)" % (sda, scl)
             if side == "left":
                 self.sensor_l = s
-            else:
+            elif side == "right":
                 self.sensor_r = s
+            else:
+                self.sensor_c = s
 
         self.leds(0, 0, 0)
 
@@ -119,8 +135,12 @@ class Robot:
 
     # ---------- sensors ----------
     def read_sensors(self):
-        """Returns ((R,G,B,W) left, (R,G,B,W) right) raw counts."""
+        """Steering sensors: ((R,G,B,W) left, (R,G,B,W) right) raw counts."""
         return self.sensor_l.rgbw(), self.sensor_r.rgbw()
+
+    def read_color(self):
+        """Middle color sensor: (R,G,B,W) raw counts."""
+        return self.sensor_c.rgbw()
 
     # ---------- lights / sound ----------
     def leds(self, r, g, b, which=None):

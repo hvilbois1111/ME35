@@ -7,7 +7,7 @@ import time
 from robot_hw import Robot
 import sensing
 
-COLOR_MAX_DIST = 0.15   # keep the same as in main.py
+COLOR_MAX_DIST = 0.1   # keep the same as in main.py
 
 robot = Robot()
 cal = sensing.load()

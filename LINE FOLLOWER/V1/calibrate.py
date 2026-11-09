@@ -9,6 +9,7 @@
 import time
 from robot_hw import Robot
 import sensing
+import machine
 
 robot = Robot()
 N_AVG = 12
@@ -43,6 +44,8 @@ mx = {"left": [0, 0, 0, 0], "right": [0, 0, 0, 0]}
 mn_w = {"left": 65535, "right": 65535}
 t_end = time.ticks_add(time.ticks_ms(), 6000)
 while time.ticks_diff(t_end, time.ticks_ms()) > 0:
+    led = machine.Pin(25, machine.Pin.OUT)
+    led.value(1)
     l, r = robot.read_sensors()
     for side, raw in (("left", l), ("right", r)):
         for i in range(4):
@@ -53,6 +56,8 @@ while time.ticks_diff(t_end, time.ticks_ms()) > 0:
     time.sleep_ms(robot.sample_ms + 2)
 robot.leds(0, 0, 0)
 robot.tone(1500, 80)
+
+
 
 cal = {}
 for side in ("left", "right"):
@@ -116,3 +121,6 @@ robot.tone(1047, 100)
 robot.tone(1319, 100)
 robot.tone(1568, 200)
 print("\nSaved to %s. Next: run monitor.py to check, then main.py." % sensing.CAL_FILE)
+
+
+

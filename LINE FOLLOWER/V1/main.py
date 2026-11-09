@@ -6,12 +6,13 @@
 import time
 from robot_hw import Robot
 import sensing
+import machine
 
 # ================= TUNING =================
-BASE_SPEED = 0.35        # 0..1 forward speed on straights (start slow)
-KP = 0.5                 # steering per unit error
+BASE_SPEED = 0.1        # 0..1 forward speed on straights (start slow)
+KP = 0.8                 # steering per unit error
 KI = 0.0                 # leave at 0 unless it sits off-center on long curves
-KD = 0.02                # damps wobble (too high = jittery spinning in place)
+KD = 0.1                # damps wobble (too high = jittery spinning in place)
 I_LIMIT = 0.5            # anti-windup clamp on the integral
 
 LOST_THRESHOLD = 0.85    # both sensors brighter than this = line lost
@@ -21,7 +22,7 @@ LOST_TIMEOUT_MS = 3000   # give up and stop after this long without the line
 
 COLOR_MAX_DIST = 0.15    # reject color matches farther than this from calibration
 COLOR_CONFIRM = 2        # consecutive reads that must agree before acting
-COLOR_COOLDOWN_MS = 1500 # ignore colors this long after a maneuver
+COLOR_COOLDOWN_MS = 5000 # ignore colors this long after a maneuver
 
 SPIN_SPEED = 0.6         # RED maneuver spin speed
 SPIN_360_MS = 1600       # approx. time for one full turn at SPIN_SPEED (tune!)
@@ -43,7 +44,7 @@ def maneuver_red(robot, cal):
     robot.tone(880, 120)
     robot.drive(SPIN_SPEED, -SPIN_SPEED)
     t0 = time.ticks_ms()
-    time.sleep_ms(int(SPIN_360_MS * 0.75))      # most of the turn blind
+    time.sleep_ms(int(SPIN_360_MS * 1))      # most of the turn blind
     # finish the turn: stop when a sensor sees dark tape or the red patch again
     while time.ticks_diff(time.ticks_ms(), t0) < int(SPIN_360_MS * 1.5):
         l, r = robot.read_sensors()
@@ -90,6 +91,8 @@ def follow(robot, cal):
 
     while True:
         t0 = time.ticks_ms()
+        led = machine.Pin(25, machine.Pin.OUT)
+        led.value(1)
         if robot.button_b():
             print("Stopped by button B")
             return
